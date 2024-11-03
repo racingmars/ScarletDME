@@ -24,6 +24,12 @@
 #
 # Changelog
 # ---------
+# 03Nov24 mrw Fix makefile. Introduce terminfo back as a build step, not an
+#             install step. Consolidate clean/distclean as there was no logical
+#             split in functionality. Move pcode blob out of bin directory in
+#             the source distribution so we can easily handle "bin" and "gplobj"
+#             directories being build artifacts and not include them in the
+#             source repository at all.
 # 05Nov22 awy Fix systemd install for unified /usr
 # 13Mar22 awy Update install target to create master account if required,
 #             and update NEWVOC
@@ -70,6 +76,7 @@
 # dat - Diccon Tesson
 # gwb - Gene Buckle (geneb@deltasoft.com)
 # awy - Anthony (Wol) Youngman
+# mrw - Matthew R. Wilson <mwilson@mattwilson.org>
 
 # default target builds 64-bit, build qm32 target for a 32-bit build
 
@@ -127,97 +134,129 @@ QMUSERS := $(shell cat /etc/group | grep qmusers)
 qm: ARCH :=
 qm: BITSIZE := 64
 qm: C_FLAGS  := -Wall -Wformat=2 -Wno-format-nonliteral -DLINUX -D_FILE_OFFSET_BITS=64 -I$(GPLSRC) -DGPL -g $(ARCH) -fPIE
-qm: $(QMOBJS) qmclilib.so qmtic qmfix qmconv qmidx qmlnxd terminfo
+qm: $(QMOBJS) qmclilib.so qmtic qmfix qmconv qmidx qmlnxd terminfo pcode
 	@echo Linking $@
+	mkdir -p $(GPLBIN)
 	@cd $(GPLOBJ)
 	@$(COMP) $(ARCH) $(L_FLAGS) $(QMOBJSD) -o $(GPLBIN)qm
 
 qm32: ARCH := -m32
 qm32: BITSIZE := 32
 qm32: C_FLAGS  := -Wall -Wformat=2 -Wno-format-nonliteral -DLINUX -D_FILE_OFFSET_BITS=64 -I$(GPLSRC) -DGPL -g $(ARCH)
-qm32: $(QMOBJS) qmclilib.so qmtic qmfix qmconv qmidx qmlnxd terminfo
+qm32: $(QMOBJS) qmclilib.so qmtic qmfix qmconv qmidx qmlnxd terminfo pcode
 	@echo Linking $@
+	mkdir -p $(GPLBIN)
 	@$(COMP) $(ARCH) $(L_FLAGS) $(QMOBJSD) -o $(GPLBIN)qm
 
 qmclilib.so: qmclilib.o
 	@echo Linking $@
+	mkdir -p $(GPLBIN)
 	@$(COMP) -shared -Wl,$(SONAME_OPT),qmclilib.so -lc $(ARCH) $(GPLOBJ)qmclilib.o -o $(GPLBIN)qmclilib.so
 	@$(COMP) -shared -Wl,$(SONAME_OPT),libqmcli.so -lc $(ARCH) $(GPLOBJ)qmclilib.o -o $(GPLBIN)libqmcli.so
 
 qmtic: qmtic.o inipath.o
 	@echo Linking $@
+	mkdir -p $(GPLBIN)
 	@$(COMP) $(C_FLAGS) -lc $(GPLOBJ)qmtic.o $(GPLOBJ)inipath.o -o $(GPLBIN)qmtic
 
 qmfix: qmfix.o ctype.o linuxlb.o dh_hash.o inipath.o
 	@echo Linking $@
+	mkdir -p $(GPLBIN)
 	@$(COMP) $(C_FLAGS) -lc $(GPLOBJ)qmfix.o $(GPLOBJ)ctype.o $(GPLOBJ)linuxlb.o $(GPLOBJ)dh_hash.o $(GPLOBJ)inipath.o -o $(GPLBIN)qmfix
 
 qmconv: qmconv.o ctype.o linuxlb.o dh_hash.o
 	@echo Linking $@
+	mkdir -p $(GPLBIN)
 	@$(COMP) $(C_FLAGS) -lc $(GPLOBJ)qmconv.o $(GPLOBJ)ctype.o $(GPLOBJ)linuxlb.o $(GPLOBJ)dh_hash.o -o $(GPLBIN)qmconv
 
 qmidx: qmidx.o
 	@echo Linking $@
+	mkdir -p $(GPLBIN)
 	@$(COMP) $(C_FLAGS) -lc $(GPLOBJ)qmidx.o -o $(GPLBIN)qmidx
 
 qmlnxd: qmlnxd.o qmsem.o
 	@echo Linking $@
+	mkdir -p $(GPLBIN)
 	@$(COMP) $(C_FLAGS) -lc $(GPLOBJ)qmlnxd.o $(GPLOBJ)qmsem.o -o $(GPLBIN)qmlnxd
 
 qmclilib.o: qmclilib.c revstamp.h
 	@echo Compiling $@ with -fPIC
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -fPIC -c $(GPLSRC)qmclilib.c -o $(GPLOBJ)qmclilib.o
 
 # We need to make sure that anything that includes revstamp.h gets built if revstamp.h 
 # changes.
 
 config.o: config.c config.h qm.h revstamp.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)config.o
 
 kernel.o: kernel.c qm.h revstamp.h header.h tio.h debug.h keys.h syscom.h config.h \
 	options.h dh_int.h locks.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)kernel.o
 
 op_kernel.o: op_kernel.c qm.h revstamp.h header.h tio.h debug.h keys.h syscom.h \
 	config.h options.h dh_int.h locks.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)op_kernel.o
 
 op_sys.o: op_sys.c qm.h header.h tio.h syscom.h dh_int.h revstamp.h config.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)op_sys.o
 
 pdump.o: pdump.c qm.h header.h syscom.h config.h revstamp.h locks.h dh_int.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)pdump.o
 
 qm.o:	qm.c qm.h revstamp.h header.h debug.h dh_int.h tio.h config.h options.h \
 	locks.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)qm.o 
 
 qmclient.o: qmclient.c qmdefs.h revstamp.h qmclient.h err.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)qmclient.o
 
 qmconv.o: qmconv.c qm.h dh_int.h header.h revstamp.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)qmconv.o
 
 qmfix.o: qmfix.c qm.h dh_int.h revstamp.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)qmfix.o
 
 qmidx.o: qmidx.c qm.h dh_int.h revstamp.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)qmidx.o
 
 qmtic.o: qmtic.c ti_names.h revstamp.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)qmtic.o
 
 sysdump.o: sysdump.c qm.h locks.h revstamp.h config.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)sysdump.o
 
 sysseg.o: sysseg.c qm.h locks.h config.h revstamp.h
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)sysseg.o
 
 .c.o:
 	@echo Compiling $@, $(BITSIZE) bit target.
+	mkdir -p $(GPLOBJ)
 	@$(COMP) $(C_FLAGS) -c $< -o $(GPLOBJ)$@
 
-.PHONY: clean distclean install datafiles docs systemd qmdev qmstop
+terminfo: qmtic terminfo.src
+	@echo Compiling terminfo library
+	mkdir -p $(TERMINFO)
+	$(GPLBIN)qmtic -p$(TERMINFO) $(MAIN)terminfo.src
+
+.PHONY: clean distclean install datafiles docs systemd qmdev qmstop pcode
+
+pcode:
+	mkdir -p $(GPLBIN)
+	cp pcode $(GPLBIN)pcode
 
 install:  
 
@@ -229,10 +268,6 @@ ifeq ($(QMSYS),)
 	@useradd --system qmsys --gid qmusers
 endif
 endif
-
-	@echo Compiling terminfo library
-	@test -d qmsys/terminfo || mkdir qmsys/terminfo
-	cd qmsys && $(GPLBIN)qmtic -pterminfo $(MAIN)terminfo.src
 
 	@echo Installing to $(INSTROOT)
 ifeq ($(wildcard $(INSTROOT)/.),)
@@ -257,21 +292,21 @@ else
 	@chmod 664 $(INSTROOT)/MESSAGES/*
 
 #	copy the contents of terminfo so the account will upgrade
-	@rm -Rf $(INSTROOT)/terminfo/*
-	@cp -R qmsys/terminfo/* $(INSTROOT)/terminfo
-	@chown qmsys:qmusers $(INSTROOT)/terminfo/*
-	@chmod 664 $(INSTROOT)/terminfo/*
+	@rm -Rf $(INSTROOT)/terminfo
+	@cp -R $(TERMINFO) $(INSTROOT)
+	@chown -R qmsys:qmusers $(INSTROOT)/terminfo
+	@chmod -R 664 $(INSTROOT)/terminfo
 #	make sure all directories are readable
-	find $(INSTROOT) -type d -print0 | xargs -0 chmod 775
+	@chmod -R +X $(INSTROOT)
 
 endif
 #       copy bin files and make them executable
-	@test -d $(INSTROOT)/bin || mkdir $(INSTROOT)/bin
+	mkdir -p $(INSTROOT)/bin
 #	copy the contents of bin so the account will upgrade
-	@rm $(INSTROOT)/bin/*
+	@rm -f $(INSTROOT)/bin/*
 	@cp bin/* $(INSTROOT)/bin
-	chown qmsys:qmusers $(INSTROOT)/bin $(INSTROOT)/bin/*
-	chmod 775 $(INSTROOT)/bin $(INSTROOT)/bin/*
+	chown -R qmsys:qmusers $(INSTROOT)/bin
+	chmod -R 775 $(INSTROOT)/bin
 
 	@echo Writing scarlet.conf file
 	@cp $(main)scarlet.conf /etc/scarlet.conf
@@ -322,18 +357,14 @@ else
 endif
 	chown -R qmsys:qmusers $(INSTROOT)
 	chmod -R 664 $(INSTROOT)
-	find $(INSTROOT) -type d -print0 | xargs -0 chmod 775
+	chmod -R +X $(INSTROOT)
 
 	@echo Data file copy completed!
-clean:
-	@$(RM) $(GPLOBJ)*.o
-#	@$(RM) $(GPLOBJ)*.so
-# no .so files are currently dropped into GPLOBJ...
 
-distclean: clean
-	@$(RM) $(GPLOBJ)*.o
-	@$(RM) $(GPLBIN)*
-	@$(RM) $(GPLSRC)terminfo
+clean:
+	@$(RM) -rf $(GPLOBJ)
+	@$(RM) -rf $(GPLBIN)
+	@$(RM) -rf $(TERMINFO)
 
 docs:
 	$(MAKE) -C docs html

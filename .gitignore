@@ -1,18 +1,11 @@
-gplobj/*.o
-bin/qm
-bin/libqmcli.so
-bin/qm
-bin/qmclilib.so
-bin/qmconv
-bin/qmfix
-bin/qmidx
-bin/qmlnxd
-bin/qmtic
-stacks/*
+bin
+gplobj
+qmsys/terminfo
+stacks
 
 # Workspace files to exclude. IDE's, etc.
-.idea/**
-.vscode/**
+.idea
+.vscode
 PVS_Studio.fullhtml/**
 PVS_Studio.tasks
 gcc.log
