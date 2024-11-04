@@ -103,11 +103,11 @@ ifeq (Darwin,$(OSNAME))
 	ARCH :=
 	BITSIZE := 64
 	C_FLAGS  := -Wall -Wformat=2 -Wno-format-nonliteral -DLINUX -D_FILE_OFFSET_BITS=64 -I$(GPLSRC) -DGPL -g $(ARCH)
-	L_FLAGS  := -lm -ldl
+	L_FLAGS  := -lm -ldl -lpam
 	INSTROOT := /opt/qmsys
 	SONAME_OPT := -install_name
 else
-	L_FLAGS  := -Wl,--no-as-needed -lm -lcrypt -ldl
+	L_FLAGS  := -Wl,--no-as-needed -lm -lcrypt -ldl -lpam
 	INSTROOT := /usr/qmsys
 	SONAME_OPT := -soname
 endif
