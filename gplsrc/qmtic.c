@@ -21,6 +21,8 @@
  * ScarletDME Wiki: https://scarlet.deltasoft.com
  * 
  * START-HISTORY (ScarletDME):
+ * 03Nov24 mrw Fix insane file creation permissions. Don't clear umask, and
+ *             create with 0664/0775 (files/dirs).
  * 27Feb20 gwb Changed integer declarations to be portable across address
  *             space sizes (32 vs 64 bit)
  * 
@@ -121,11 +123,11 @@
 #endif
 
 #include <unistd.h>
-#define MakeDirectory(name) mkdir(name, 0777)
+#define MakeDirectory(name) mkdir(name, 0775)
 #define stricmp(a, b) strcasecmp(a, b)
 #define O_BINARY 0
 #define TEXTREAD "r"
-#define default_access 0777
+#define default_access 0664
 #define DS '/'
 
 #ifndef DS
@@ -339,8 +341,6 @@ int main(int argc, char* argv[]) {
   {
     if (!name_present)
       goto usage;
-
-    umask(0);
 
     /* Create terminfo directory if it does not already exist */
 
