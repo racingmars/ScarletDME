@@ -21,11 +21,8 @@
  * ScarletDME Wiki: https://scarlet.deltasoft.com
  * 
  * START-HISTORY (ScarletDME):
- * 30Nov23 mab Added "$y$" -  yescrypt to login_user()
- * 17Jan22 gwb Added a fix to login_user() to be able to grok SHA-512
- *             hashes ($6$) along with the exiting MD5 hashes ($1$).
- *             Thanks to Tom D. for the fix.
- * 
+ * 03Nov24 mrw Change login_user() to use PAM login check instead of directly
+ *             reading shadow password file.
  * 05Mar20 gwb Added an include for crypt in order to eliminate a warning.
  * 28Feb20 gwb Changed integer declarations to be portable across address
  *             space sizes (32 vs 64 bit)
@@ -102,10 +99,7 @@
 
 #include <sched.h>
 
-#ifndef __APPLE__
-#define _GNU_SOURCE /* eliminates the warning when we call crypt() below */
-#include <crypt.h>
-#endif
+#include <security/pam_appl.h>
 
 Public int ChildPipe;
 Public bool in_sh; /* 0562 Doing SH command? */
@@ -131,6 +125,9 @@ Private bool tty_modes_saved = FALSE;
 Private int16_t type_ahead = -1;
 
 Private void signal_handler(int signum);
+
+Private int pam_password_conv(int num_msg, const struct pam_message **msg,
+  struct pam_response **resp, void *appdata_ptr);
 
 void set_term(bool trap_break);
 void set_old_tty_modes(void);
@@ -683,54 +680,65 @@ char socket_byte() {
 /* ======================================================================
    login_user()  -  Perform checks and login as specified user            */
 
-//
-// Message that details the change is here: https://groups.google.com/g/scarletdme/c/Xza0TPEVqb8
-//
-// Summarized:
-//  change this line: if (memcmp(p, "$1$", 3) == 0) /* MD5 algorithm */
-//  to: if ((memcmp(p, "$1$", 3) == 0) || /* MD5 algorithm */
-//         (memcmp(p, "$6$", 3) == 0)
-// 17Jan22 gwb Added above change
-// 30Nov23 mab Added (memcmp(p,"$y$", 3) == 0)) {  /* yescrypt */
+// 03Nov24 mrw Change to use PAM login check instead of directly reading
+//             shadow password file.
 bool login_user(char *username, char *password) {
-  FILE *fu;
+  pam_handle_t *pam_handle;
+  int pam_result;
+  struct pam_conv pam_conversation = { pam_password_conv, password };
   struct passwd *pwd;
-  char pw_rec[200 + 1];
-  int16_t len;
-  char *p = NULL;
-  char *q;
 
-  if ((fu = fopen(PASSWD_FILE_NAME, "r")) == NULL) {
+  pam_result = pam_start("login", username, &pam_conversation, &pam_handle);
+  if (pam_result != PAM_SUCCESS) {
     tio_printf("%s\n", sysmsg(1007));
     return FALSE;
   }
 
-  len = strlen(username);
-
-  while (fgets(pw_rec, sizeof(pw_rec), fu) > 0) {
-    if ((pw_rec[len] == ':') && (memcmp(pw_rec, username, len) == 0)) {
-      p = pw_rec + len + 1;
-      break;
-    }
+  pam_result = pam_authenticate(pam_handle, PAM_SILENT);
+  if (pam_result != PAM_SUCCESS) {
+    pam_end(pam_handle, pam_result);
+    return FALSE;
   }
-  fclose(fu);
 
-  if (p != NULL) {
-    if ((memcmp(p, "$1$", 3) == 0) || /* MD5 algorithm */
-        (memcmp(p, "$6$", 3) == 0) || /* SHA512 */
-        (memcmp(p,"$y$", 3) == 0)) {  /* yescrypt */
-      if ((q = strchr(p, ':')) != NULL)
-        *q = '\0';
-      if (strcmp((char *)crypt(password, p), p) == 0) {
-        if (((pwd = getpwnam(username)) != NULL) && (setgid(pwd->pw_gid) == 0) && (setuid(pwd->pw_uid) == 0)) {
-          //         set_groups();
-          return TRUE;
-        }
-      }
-    }
+  // Authentication successful. Check that the user account is valid.
+  pam_result = pam_acct_mgmt(pam_handle, PAM_SILENT);
+  if (pam_result != PAM_SUCCESS) {
+    pam_end(pam_handle, pam_result);
+    return FALSE;
+  }
+
+  // At this point, the user has been authenticated and the account verified as
+  // active. End our PAM session and attempt to change to the user's identity.
+  pam_end(pam_handle, pam_result);
+
+  if (((pwd = getpwnam(username)) != NULL) &&
+          (setgid(pwd->pw_gid) == 0) &&
+          (setuid(pwd->pw_uid) == 0)) {
+    //         set_groups();
+    return TRUE;
   }
 
   return FALSE;
+}
+
+// pam_password_conv is the conversation function for our pam_authenticate
+// call. For now we only support password authentication and assume all prompts
+// are asking for the user's password.
+int pam_password_conv(int num_msg, const struct pam_message **msg,
+                      struct pam_response **resp, void *appdata_ptr) {
+  int i;
+
+  *resp = calloc(sizeof(struct pam_response), num_msg);
+
+  for (i=0; i<num_msg; i++) {
+    if (msg[i]->msg_style == PAM_PROMPT_ECHO_OFF ||
+          msg[i]->msg_style == PAM_PROMPT_ECHO_ON) {
+      // Set the corresponding reply to any prompt requests
+      resp[i]->resp_retcode = 0;
+      resp[0]->resp = strdup(appdata_ptr);
+    }
+  }
+  return PAM_SUCCESS;
 }
 
 /* ======================================================================
