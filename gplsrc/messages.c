@@ -21,6 +21,8 @@
  * ScarletDME Wiki: https://scarlet.deltasoft.com
  *
  * START-HISTORY (ScarletDME):
+ * 05Nov24 mrw Update sysmsg to correctly display messages with "\n" sequence
+ *             in terminals.
  * 01Feb23 njs sysmsg replace new line characters with @FM in message
  *             remove trailing new line if present
  *             remove problematic use of strcpy in sysmsg
@@ -259,17 +261,17 @@ char* sysmsg(int msg_no) {
   while ((p = strchr(p, '\\')) != NULL) {
     switch (*(p + 1)) {
       case 'n':
-        *p = '\n';
-      /*  strcpy(p + 1, p + 2); */
-        memmove(p + 1, p + 2, strlen(p+2));
-      /* get ride of dublicate last character */
-        p[strlen(p)-1] = '\0';
+        /* mrw 05Nov24                                                  */
+        /* for display purposes in a terminal, we want CR+LF, so we can */
+        /* replace the '\' and 'n' in-place with \r and \n              */
+        *p = '\r';
+        *(p+1) = '\n';
         break;
       case 't':
         *p = '\t';
         /*  strcpy(p + 1, p + 2); */
         memmove(p + 1, p + 2, strlen(p+2));
-        /* get ride of dublicate last character */
+        /* get rid of duplicate last character */
         p[strlen(p)-1] = '\0';
         break;
     }
