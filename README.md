@@ -1,3 +1,39 @@
+racingmars' ScarletDME repository
+=================================
+
+This repository contains updates to ScarletDME by racingmars. This is based on
+the dev branch of https://github.com/geneb/ScarletDME/, where Gene Buckle and
+other contributors have done a tremendous amount of work to bring the old
+32-bit OpenQM GPL release up to being able to run on 64-bit systems and to
+maintain what, as far as I know, is the only open source, free software
+multi-value "PICK System"-like database.
+
+My goal in this repository is to fix minor problems (e.g. at the time I forked
+the official repository, the makefile in the dev branch was broken) and small
+improvements (e.g. use PAM to authenticate users instead of just direct
+checking of hashes in /etc/shadow). My goal is not to maintain a true fork
+competing with the upstream project, but to use this repository to implement
+and test changes that could be pulled back into the upstream project if the
+ScarletDME maintainers and community are interested in them.
+
+If you are interested in the original OpenQM 2.6-6 GPL code for 32-bit
+environments, but with similar fixes and minor improvements I've made to the
+ScarletDME code, I maintain an OpenQM repository at
+https://github.com/racingmars/openqm/
+
+The original ScarletDME description is below, followed by the original readme
+text from the upstream repository.
+
+—Matthew Wilson <mwilson@mattwilson.org>, Nov. 2024
+
+---
+
+ScarletDME is a Database Management Environment, a "database on steroids".
+Built on the GPL'd release of OpenQM by Ladybridge Systems, it provides a
+simple, end-user-friendly database that is simple to develop in and use.
+
+---
+
 [Make sure to check out the change_log.txt file to see the most
  current work being done!]
 
