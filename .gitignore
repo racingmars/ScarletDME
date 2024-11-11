@@ -3,6 +3,8 @@ gplobj
 qmsys/terminfo
 stacks
 
+docker/qmdata
+
 # Workspace files to exclude. IDE's, etc.
 .idea
 .vscode

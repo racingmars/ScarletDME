@@ -1,0 +1,2 @@
+# Don't copy build output into the build stage
+qmsys/terminfo

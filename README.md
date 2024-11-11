@@ -16,6 +16,13 @@ competing with the upstream project, but to use this repository to implement
 and test changes that could be pulled back into the upstream project if the
 ScarletDME maintainers and community are interested in them.
 
+I have also created a turnkey, easy-to-run Docker image to allow new users to
+quickly have a working, easily-accessible ScarletDME system. For more
+information, see the docker directory in this repository and the [Docker Hub
+page][1]
+
+[1]: https://hub.docker.com/r/racingmars/scarletdme
+
 If you are interested in the original OpenQM 2.6-6 GPL code for 32-bit
 environments, but with similar fixes and minor improvements I've made to the
 ScarletDME code, I maintain an OpenQM repository at

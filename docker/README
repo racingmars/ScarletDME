@@ -1,0 +1,12 @@
+This directory contains the files necessary to build a Docker image for
+running the version of ScarletDME maintained in this repository.
+
+To build the image, run the docker-build.sh script, which will create an
+image with the tag scarletdme:latest.
+
+To run the image, docker-run.sh provides a sample recommended run command.
+
+Current verions of this image will be published on Docker Hub under
+racingmars/scarletdme (https://hub.docker.com/r/racingmars/scarletdme). For
+the image documentation, see README.DockerHub.md, which contains the image
+description published on Docker Hub.
