@@ -82,6 +82,8 @@ struct CONFIG {
   int16_t portmap_base_port;       /* PORTMAP: First port number ... */
   int16_t portmap_base_user;       /*          ...First user number... */
   int16_t portmap_range;           /*          ...Number of ports/users */
+  char pid_file_path[MAX_PATHNAME_LEN+1]; /* PIDFILE: Replace the default file
+                                           * path containing qnlnxd pid */
   char startup[80+1];              /* STARTUP: Startup command */
  };
 

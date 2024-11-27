@@ -78,6 +78,7 @@
  *  NUMLOCKS=n    Maximum number of record locks
  *  OBJECTS=n     Limit on loaded object code count (0 = no limit)
  *  OBJMEM=n      Limit on locade object size (kb, 0 = no limit)
+ *  PIDFILE=file  Replace the default file path containing qnlnxd process id
  *  QMCLIENT=n    QMClient rules (0=all, 1=no call/exec, 2=restricted call)
  *  QMSYS=path    QMSYS directory path
  *  SAFEDIR=1     Use careful update to directory files
@@ -256,7 +257,13 @@ struct CONFIG* read_config(char* errmsg) {
         pcfg.objmem = n * 1024L;
       else if (sscanf(rec, "PDUMP=%d", &n) == 1)
         cfg->pdump |= n;
-      else if (sscanf(rec, "PORTMAP=%d,%d,%d", &n, &n2, &n3) == 3) {
+      else if (strncmp(rec, "PIDFILE=", 8) == 0) {
+        if (strlen (rec) - 8 > MAX_PATHNAME_LEN) {
+          sprintf(errmsg, "PIDFILE file name too long");
+          goto exit_read_config;
+        }
+        strcpy(cfg->pid_file_path, rec + 8);
+      } else if (sscanf(rec, "PORTMAP=%d,%d,%d", &n, &n2, &n3) == 3) {
         cfg->portmap_base_port = n;
         cfg->portmap_base_user = n2;
         cfg->portmap_range = n3;
